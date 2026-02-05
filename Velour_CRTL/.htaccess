@@ -1,0 +1,3 @@
+RewriteEngine On
+rewriteCond %{REQUEST_FILENAME} !-f
+rewriteRule ^(.*)$ public/index.php?url=$1 [QSA,L]

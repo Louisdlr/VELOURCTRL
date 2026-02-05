@@ -1,0 +1,16 @@
+{
+    "name": "fmdev/mvc",
+    "autoload": {
+        "psr-4": {
+            "Router\\":"routes/",
+            "App\\":"app/",
+            "Database\\":"database"
+        }
+    },
+    "authors": [
+        {
+            "name": "fmdev"
+        }
+    ],
+    "require": {}
+}
