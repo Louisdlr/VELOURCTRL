@@ -13,7 +13,8 @@ if (session_status() === PHP_SESSION_NONE) {
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'velour_ctrl_db');  
 define('DB_USER', 'root');
-define('DB_PASS', '');            
+define('DB_PASS', ''); 
+define('BASE_URL', '/VELOUR_CTRL/public');
 
 /**
  * Retourne une connexion PDO unique (singleton)
