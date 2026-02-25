@@ -12,6 +12,8 @@
   <a href="<?= BASE_URL ?>/">Accueil</a>
   <a href="<?= BASE_URL ?>/cart">Panier</a>
 
+   <a href="<?= BASE_URL ?>/article/new">Créer un article</a>
+
   <?php if (!empty($_SESSION['user'])): ?>
     <a href="<?= BASE_URL ?>/account">Compte</a>
 

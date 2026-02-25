@@ -41,4 +41,11 @@ $canEdit = !empty($_SESSION['user']['id']) &&
   <form method="post" action="<?= BASE_URL ?>/edit/open/<?= (int)$article['id'] ?>">
     <button type="submit">Modifier l’article</button>
   </form>
+
+  <form method="post"
+        action="<?= BASE_URL ?>/edit/<?= (int)$article['id'] ?>/delete"
+        style="display:inline;"
+        onsubmit="return confirm('Supprimer cet article ?');">
+    <button type="submit">Supprimer l’article</button>
+  </form>
 <?php endif; ?>
