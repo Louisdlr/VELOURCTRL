@@ -1,49 +1,90 @@
-<h1><?= htmlspecialchars($title ?? 'Accueil') ?></h1>
-
 <?php if (empty($articles)): ?>
   <p>Aucun article pour le moment.</p>
 <?php else: ?>
 
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;">
+    <section class="hero">
+
+        <div class="hero-text">
+
+            <h1>
+                <span class="kinetic-type">CYBER</span><br>
+                <span class="kinetic-type">OPULENCE</span><br>
+                <span class="kinetic-type">V.2025</span>
+            </h1>
+
+            <p style="max-width: 520px; color:#777; margin-bottom: 2rem;">
+                High-fidelity streetwear for the post-digital age. 
+                Limited edition fabrics engineered for the underground.
+            </p>
+
+            <div class="hero-meta">
+                <span>EST. 2024</span>
+                <span>ZURICH / TOKYO</span>
+                <span>AVAILABLE: GLOBAL</span>
+            </div>
+
+            <a href="#catalog" class="btn btn-primary">
+                INIT_SEQUENCE
+            </a>
+
+        </div>
+
+        <div class="hero-visual">
+
+            <div class="chrome-shape"></div>
+            <div class="chrome-shape-inner"></div>
+
+            <div style="position:absolute; bottom:15px; left:20px; font-size:0.7rem; color:#777;">
+                RENDER_TARGET: 01<br>
+                NOISE_LEVEL: 0%
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="catalog" id="catalog">
+
     <?php foreach ($articles as $a): ?>
 
-      <?php
-        $id = (int)($a['id'] ?? 0);
+        <div class="product-card">
 
-        // Fallback titres possibles
-        $name = $a['title'] ?? $a['name'] ?? $a['nom'] ?? $a['label'] ?? 'Sans titre';
+            <div class="p-image">
 
-        // Fallback descriptions possibles
-        $desc = $a['description'] ?? $a['desc'] ?? $a['content'] ?? '';
+                <?php if (!empty($a['image_url'])): ?>
+                    <img src="<?= htmlspecialchars($a['image_url']) ?>" 
+                        style="max-width:70%; max-height:300px;">
+                <?php else: ?>
+                    <div class="p-art"></div>
+                <?php endif; ?>
 
-        // Fallback prix possibles
-        $price = $a['price'] ?? $a['prix'] ?? null;
+                <span class="tag">LIMITED</span>
 
-        // Fallback image possibles
-        $img = $a['image'] ?? $a['image_url'] ?? $a['img'] ?? $a['url_img'] ?? null;
-      ?>
+            </div>
 
-      <div style="border:1px solid #ddd;border-radius:8px;padding:12px;">
-        <h3 style="margin:0 0 8px;"><?= htmlspecialchars($name) ?></h3>
+            <div class="p-info">
+                <div>
+                    <div class="p-title">
+                        <?= htmlspecialchars($a['name']) ?>
+                    </div>
+                    <div class="p-meta">
+                        <?= htmlspecialchars($a['description']) ?>
+                    </div>
+                </div>
 
-        <?php if (!empty($img)): ?>
-          <img src="<?= htmlspecialchars($img) ?>" alt="" style="width:100%;max-height:160px;object-fit:cover;border-radius:6px;">
-        <?php endif; ?>
+                <div class="p-price">
+                    €<?= number_format($a['price'], 2) ?>
+                </div>
+            </div>
 
-        <?php if ($desc !== ''): ?>
-          <p style="margin:8px 0;"><?= htmlspecialchars($desc) ?></p>
-        <?php endif; ?>
-
-        <?php if ($price !== null): ?>
-          <strong><?= number_format((float)$price, 2) ?> €</strong>
-        <?php endif; ?>
-
-        <div style="margin-top:10px;">
-          <a href="<?= BASE_URL ?>/detail/<?= $id ?>">Voir le détail</a>
+            <div style="padding: 1.5rem;">
+                <a href="<?= BASE_URL ?>/detail/<?= $a['id'] ?>" class="btn" style="width:100%;">
+                    VIEW DETAILS
+                </a>
+            </div>
         </div>
-      </div>
 
     <?php endforeach; ?>
-  </div>
-
+    </section>
 <?php endif; ?>

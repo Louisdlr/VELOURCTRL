@@ -1,0 +1,98 @@
+# VELOUR CTRL - GitIgnore Configuration
+
+# ====================================
+# Fichiers de configuration sensibles
+# ====================================
+.env
+config/config.php.local
+*.local.php
+
+# ====================================
+# Logs et fichiers temporaires
+# ====================================
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+database/*.log
+database/db.log
+
+# ====================================
+# Dossiers de l'éditeur / IDE
+# ====================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+*.code-workspace
+
+# ====================================
+# Dépendances PHP
+# ====================================
+/vendor/
+composer.phar
+composer.lock
+
+# ====================================
+# Node.js (si utilisé ultérieurement)
+# ====================================
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# ====================================
+# Uploads et fichiers utilisateurs
+# ====================================
+/uploads/*
+!/uploads/.gitkeep
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# ====================================
+# Cache et assets compilés
+# ====================================
+/cache/*
+!/cache/.gitkeep
+/public/assets/build/*
+*.min.css
+*.min.js
+
+# ====================================
+# Sauvegardes base de données
+# ====================================
+*.sql.backup
+*.sql.gz
+/database/backups/*
+!/database/backups/.gitkeep
+
+# ====================================
+# OS et système
+# ====================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# ====================================
+# Documentation générée
+# ====================================
+/docs/api/*
+/phpdoc/*
+
+# ====================================
+# Tests
+# ====================================
+/phpunit.xml
+/coverage/*
+.phpunit.result.cache
