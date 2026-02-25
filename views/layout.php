@@ -8,20 +8,25 @@
 <body>
   <header style="padding:16px; border-bottom:1px solid #ddd;">
     <strong>Velour CTRL</strong>
-    <nav style="margin-top:8px;">
-      <a href="<?= BASE_URL ?>/">Accueil</a>
-      <a href="<?= BASE_URL ?>/login" style="margin-left:12px;">Login</a>
-      <a href="<?= BASE_URL ?>/register" style="margin-left:12px;">Register</a>
-      <a href="<?= BASE_URL ?>/cart" style="margin-left:12px;">Panier</a>
-      <?php if (!empty($_SESSION['user'])): ?>
-      <span>Connecté : <?= htmlspecialchars($_SESSION['user']['username'] ?? 'Utilisateur') ?></span>
-  |   <a href="<?= BASE_URL ?>/logout">Déconnexion</a>
-      <?php else: ?>
-      <a href="<?= BASE_URL ?>/login">Login</a>
-      <a href="<?= BASE_URL ?>/register">Register</a>
+    <nav style="margin-bottom:20px;">
+  <a href="<?= BASE_URL ?>/">Accueil</a>
+  <a href="<?= BASE_URL ?>/cart">Panier</a>
+
+  <?php if (!empty($_SESSION['user'])): ?>
+    <a href="<?= BASE_URL ?>/account">Compte</a>
+
+    <?php if (!empty($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'ADMIN'): ?>
+      <a href="<?= BASE_URL ?>/admin">Admin</a>
     <?php endif; ?>
 
-    </nav>
+    <span>Connecté : <?= htmlspecialchars($_SESSION['user']['username'] ?? 'Utilisateur') ?></span>
+    | <a href="<?= BASE_URL ?>/logout">Déconnexion</a>
+
+  <?php else: ?>
+    <a href="<?= BASE_URL ?>/login">Login</a>
+    <a href="<?= BASE_URL ?>/register">Register</a>
+  <?php endif; ?>
+</nav>
   </header>
 
   <main style="padding:16px;">
