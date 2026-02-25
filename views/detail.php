@@ -32,3 +32,13 @@
 <p style="margin-top:10px;">
   <a href="<?= BASE_URL ?>/cart">Voir mon panier</a>
 </p>
+<?php
+$canEdit = !empty($_SESSION['user']['id']) &&
+  ( (int)($article['user_id'] ?? 0) === (int)$_SESSION['user']['id'] || (!empty($_SESSION['user']['role']) && $_SESSION['user']['role']==='ADMIN') );
+?>
+
+<?php if ($canEdit): ?>
+  <form method="post" action="<?= BASE_URL ?>/edit/open/<?= (int)$article['id'] ?>">
+    <button type="submit">Modifier l’article</button>
+  </form>
+<?php endif; ?>
