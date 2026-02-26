@@ -1,0 +1,11 @@
+RewriteEngine On
+
+# Si le fichier existe physiquement, on ne redirige pas
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Sinon on envoie vers index.php
+RewriteRule ^ index.php [L]

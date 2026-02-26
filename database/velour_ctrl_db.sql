@@ -4,7 +4,7 @@ USE velour_ctrl_db;
 -- =========================
 -- USERS
 -- =========================
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(100) NOT NULL UNIQUE,
@@ -18,43 +18,53 @@ CREATE TABLE users (
 -- =========================
 -- ARTICLES
 -- =========================
-CREATE TABLE articles (
+CREATE TABLE IF NOT EXISTS articles (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
     name VARCHAR(100) NOT NULL,
     description TEXT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     image_url VARCHAR(255),
     is_active TINYINT(1) DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_articles_user
+      FOREIGN KEY (user_id) REFERENCES users(id)
+      ON DELETE SET NULL
 );
 
 -- =========================
 -- STOCK
 -- =========================
-CREATE TABLE stock (
+CREATE TABLE IF NOT EXISTS stock (
     id INT AUTO_INCREMENT PRIMARY KEY,
     article_id INT NOT NULL UNIQUE,
-    quantity INT NOT NULL CHECK (quantity >= 0),
-    FOREIGN KEY (article_id) REFERENCES articles(id)
+    quantity INT NOT NULL,
+    CONSTRAINT fk_stock_article
+      FOREIGN KEY (article_id) REFERENCES articles(id)
+      ON DELETE CASCADE
 );
 
 -- =========================
 -- CART
 -- =========================
-CREATE TABLE cart (
+CREATE TABLE IF NOT EXISTS cart (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     article_id INT NOT NULL,
-    quantity INT NOT NULL CHECK (quantity > 0),
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (article_id) REFERENCES articles(id),
+    quantity INT NOT NULL,
+    CONSTRAINT fk_cart_user
+      FOREIGN KEY (user_id) REFERENCES users(id)
+      ON DELETE CASCADE,
+    CONSTRAINT fk_cart_article
+      FOREIGN KEY (article_id) REFERENCES articles(id)
+      ON DELETE CASCADE,
     UNIQUE (user_id, article_id)
 );
 
 -- =========================
 -- INVOICES
 -- =========================
-CREATE TABLE invoices (
+CREATE TABLE IF NOT EXISTS invoices (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
@@ -62,31 +72,42 @@ CREATE TABLE invoices (
     billing_city VARCHAR(100) NOT NULL,
     billing_postal_code VARCHAR(20) NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    CONSTRAINT fk_invoices_user
+      FOREIGN KEY (user_id) REFERENCES users(id)
+      ON DELETE CASCADE
 );
 
 -- =========================
 -- INVOICE ITEMS
 -- =========================
-CREATE TABLE invoice_items (
+CREATE TABLE IF NOT EXISTS invoice_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     invoice_id INT NOT NULL,
-    article_id INT NOT NULL,
+    -- On garde l'historique des factures même si un article est supprimé
+    article_id INT NULL,
     quantity INT NOT NULL,
     price_at_purchase DECIMAL(10,2) NOT NULL,
-    FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
-    FOREIGN KEY (article_id) REFERENCES articles(id)
+    CONSTRAINT fk_items_invoice
+      FOREIGN KEY (invoice_id) REFERENCES invoices(id)
+      ON DELETE CASCADE,
+    CONSTRAINT fk_items_article
+      FOREIGN KEY (article_id) REFERENCES articles(id)
+      ON DELETE SET NULL
 );
 
 -- =========================
 -- LIKES
 -- =========================
-CREATE TABLE likes (
+CREATE TABLE IF NOT EXISTS likes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     article_id INT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+    CONSTRAINT fk_likes_user
+      FOREIGN KEY (user_id) REFERENCES users(id)
+      ON DELETE CASCADE,
+    CONSTRAINT fk_likes_article
+      FOREIGN KEY (article_id) REFERENCES articles(id)
+      ON DELETE CASCADE,
     UNIQUE (user_id, article_id)
 );
