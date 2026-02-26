@@ -26,10 +26,6 @@ $isAdmin = $user && ($user['role'] === 'ADMIN');
 </head>
 <body>
 
-<<<<<<< Updated upstream
-  <?php if (!empty($_SESSION['user'])): ?>
-    <a href="<?= BASE_URL ?>/account">Compte</a>
-=======
 <div id="app">
     <!-- BACKGROUND EFFECTS -->
     <div class="bg-mesh"></div>
@@ -40,7 +36,6 @@ $isAdmin = $user && ($user['role'] === 'ADMIN');
         <a href="<?= BASE_URL ?>" class="logo">
             Velour
         </a>
->>>>>>> Stashed changes
 
         <div class="nav-links">
 

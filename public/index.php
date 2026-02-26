@@ -3,6 +3,13 @@ require __DIR__ . '/../config/config.php';
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
+$staticFile = __DIR__ . str_replace(BASE_URL, '', $uri);
+
+if (is_file($staticFile)) {
+    header('Content-Type: ' . mime_content_type($staticFile));
+    readfile($staticFile);
+    exit;
+}
 // Supprime le chemin de base du projet (XAMPP)
 $basePath = BASE_URL;
 if (str_starts_with($uri, $basePath)) {
@@ -55,7 +62,7 @@ function require_admin(): void {
 // HOME : n'affiche que les articles actifs
 if ($uri === '/') {
     $pdo = db();
-    $stmt = $pdo->query("SELECT * FROM articles WHERE IFNULL(is_active,1)=1 ORDER BY id DESC");
+    $stmt = $pdo->query("SELECT * FROM articles WHERE is_active = 1 ORDER BY id DESC");
     $articles = $stmt->fetchAll();
 
     render('home', [
@@ -223,77 +230,166 @@ if ($uri === '/cart/validate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $pdo->beginTransaction();
 
     try {
-        $ids = array_keys($cart);
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $ids = array_keys($cart);
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
 
-        $stmt = $pdo->prepare("
-            SELECT a.id, a.name, a.price, IFNULL(a.is_active,1) AS is_active, COALESCE(s.quantity, 0) AS quantity
-            FROM articles a
-            LEFT JOIN stock s ON s.article_id = a.id
-            WHERE a.id IN ($placeholders)
-            FOR UPDATE
-        ");
-        $stmt->execute($ids);
-        $rows = $stmt->fetchAll();
+    // 1) Lock articles + stock
+    $stmtArticles = $pdo->prepare("
+        SELECT a.id, a.name, a.price, IFNULL(a.is_active,1) AS is_active, COALESCE(s.quantity, 0) AS quantity
+        FROM articles a
+        LEFT JOIN stock s ON s.article_id = a.id
+        WHERE a.id IN ($placeholders)
+        FOR UPDATE
+    ");
+    $stmtArticles->execute($ids);
+    $rows = $stmtArticles->fetchAll();
 
-        $byId = [];
-        foreach ($rows as $r) $byId[(int)$r['id']] = $r;
-
-        $total = 0;
-        foreach ($cart as $id => $qty) {
-            $id = (int)$id;
-            $qty = (int)$qty;
-
-            if (!isset($byId[$id])) throw new Exception("Article introuvable (id=$id)");
-
-            if ((int)$byId[$id]['is_active'] !== 1) {
-                throw new Exception("Article désactivé: " . $byId[$id]['name']);
-            }
-
-            $available = (int)$byId[$id]['quantity'];
-            if ($qty > $available) throw new Exception("Stock insuffisant pour: " . $byId[$id]['name']);
-
-            $total += ((float)$byId[$id]['price']) * $qty;
-        }
-
-        $billingAddress = trim($_POST['billing_address'] ?? 'Adresse inconnue');
-        $billingCity = trim($_POST['billing_city'] ?? 'Ville');
-        $billingPostal = trim($_POST['billing_postal_code'] ?? '00000');
-
-        $stmtInv = $pdo->prepare("
-            INSERT INTO invoices (user_id, total_amount, billing_address, billing_city, billing_postal_code)
-            VALUES (?, ?, ?, ?, ?)
-        ");
-        $stmtInv->execute([$userId, $total, $billingAddress, $billingCity, $billingPostal]);
-        $invoiceId = (int)$pdo->lastInsertId();
-
-        $stmtItem = $pdo->prepare("
-            INSERT INTO invoice_items (invoice_id, article_id, quantity, price_at_purchase)
-            VALUES (?, ?, ?, ?)
-        ");
-        $stmtStock = $pdo->prepare("UPDATE stock SET quantity = quantity - ? WHERE article_id = ?");
-
-        foreach ($cart as $id => $qty) {
-            $id = (int)$id;
-            $qty = (int)$qty;
-            $price = (float)$byId[$id]['price'];
-
-            $stmtItem->execute([$invoiceId, $id, $qty, $price]);
-            $stmtStock->execute([$qty, $id]);
-        }
-
-        $pdo->commit();
-
-        unset($_SESSION['cart']);
-        header('Location: ' . BASE_URL . '/invoice/' . $invoiceId);
-        exit;
-
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        $_SESSION['cart_error'] = $e->getMessage();
-        header('Location: ' . BASE_URL . '/cart');
-        exit;
+    $byId = [];
+    foreach ($rows as $r) {
+        $byId[(int)$r['id']] = $r;
     }
+
+    // 2) Vérifs + calcul total
+    $total = 0.0;
+    foreach ($cart as $id => $qty) {
+        $id = (int)$id;
+        $qty = (int)$qty;
+
+        if (!isset($byId[$id])) {
+            throw new Exception("Article introuvable (id=$id)");
+        }
+
+        if ((int)$byId[$id]['is_active'] !== 1) {
+            throw new Exception("Article désactivé : " . $byId[$id]['name']);
+        }
+
+        $available = (int)$byId[$id]['quantity'];
+        if ($qty > $available) {
+            throw new Exception("Stock insuffisant pour : " . $byId[$id]['name']);
+        }
+
+        $total += ((float)$byId[$id]['price']) * $qty;
+    }
+
+    // 3) Lock solde user + vérif solde
+    $stmtBalance = $pdo->prepare("SELECT balance FROM users WHERE id = ? FOR UPDATE");
+    $stmtBalance->execute([$userId]);
+    $balance = (float)($stmtBalance->fetchColumn() ?? 0);
+
+    if ($balance < $total) {
+        throw new Exception(
+            "Solde insuffisant : " . number_format($balance, 2) . " € disponibles, total = " . number_format($total, 2) . " €."
+        );
+    }
+
+    // 4) Créer invoice
+    $billingAddress = trim($_POST['billing_address'] ?? 'Adresse inconnue');
+    $billingCity    = trim($_POST['billing_city'] ?? 'Ville');
+    $billingPostal  = trim($_POST['billing_postal_code'] ?? '00000');
+
+    $stmtInv = $pdo->prepare("
+        INSERT INTO invoices (user_id, total_amount, billing_address, billing_city, billing_postal_code)
+        VALUES (?, ?, ?, ?, ?)
+    ");
+    $stmtInv->execute([$userId, $total, $billingAddress, $billingCity, $billingPostal]);
+    $invoiceId = (int)$pdo->lastInsertId();
+
+    // 5) invoice_items + décrément stock
+    $stmtItem  = $pdo->prepare("
+        INSERT INTO invoice_items (invoice_id, article_id, quantity, price_at_purchase)
+        VALUES (?, ?, ?, ?)
+    ");
+    $stmtStock = $pdo->prepare("UPDATE stock SET quantity = quantity - ? WHERE article_id = ?");
+
+    foreach ($cart as $id => $qty) {
+        $id = (int)$id;
+        $qty = (int)$qty;
+        $price = (float)$byId[$id]['price'];
+
+        $stmtItem->execute([$invoiceId, $id, $qty, $price]);
+        $stmtStock->execute([$qty, $id]);
+    }
+
+    // 6) Débit du solde (une seule fois)
+    $stmtDebit = $pdo->prepare("UPDATE users SET balance = balance - ? WHERE id = ? AND balance >= ?");
+    $stmtDebit->execute([$total, $userId, $total]);
+    if ($stmtDebit->rowCount() === 0) {
+        throw new Exception("Solde insuffisant.");
+    }
+
+    // 7) Commit
+    $pdo->commit();
+
+    // MAJ session (utile pour /account)
+    if (isset($_SESSION['user'])) {
+        $_SESSION['user']['balance'] = $balance - $total;
+    }
+
+    // 8) Vider panier + redirect facture
+    unset($_SESSION['cart']);
+    header('Location: ' . BASE_URL . '/invoice/' . $invoiceId);
+    exit;
+
+} catch (Exception $e) {
+    $pdo->rollBack();
+    $_SESSION['cart_error'] = $e->getMessage();
+    header('Location: ' . BASE_URL . '/cart');
+    exit;
+}
+}
+if ($uri === '/article/create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+  require_login();
+  $pdo = db();
+
+  $name = trim($_POST['name'] ?? '');
+  $desc = trim($_POST['description'] ?? '');
+  $price = (float)($_POST['price'] ?? 0);
+  $img = trim($_POST['image_url'] ?? '');
+  $active = !empty($_POST['is_active']) ? 1 : 0;
+  $stockQty = (int)($_POST['stock_qty'] ?? 0);
+
+  $errors = [];
+  if ($name === '') $errors[] = "Nom obligatoire";
+  if ($desc === '') $errors[] = "Description obligatoire";
+  if ($price <= 0) $errors[] = "Prix invalide";
+  if ($stockQty < 0) $errors[] = "Stock invalide";
+
+  if ($errors) {
+    render('article_new', ['title' => 'Créer un article', 'errors' => $errors, 'old' => $_POST]);
+  }
+
+  $pdo->beginTransaction();
+  try {
+    $stmt = $pdo->prepare("
+      INSERT INTO articles (user_id, name, description, price, image_url, is_active)
+      VALUES (?, ?, ?, ?, ?, ?)
+    ");
+    $stmt->execute([
+      (int)$_SESSION['user']['id'],
+      $name,
+      $desc,
+      $price,
+      ($img === '' ? null : $img),
+      $active
+    ]);
+    $articleId = (int)$pdo->lastInsertId();
+
+    $stmt = $pdo->prepare("INSERT INTO stock (article_id, quantity) VALUES (?, ?)");
+    $stmt->execute([$articleId, $stockQty]);
+
+    $pdo->commit();
+    header('Location: ' . BASE_URL . '/detail/' . $articleId);
+    exit;
+
+  } catch (Exception $e) {
+    $pdo->rollBack();
+    $errors[] = "Erreur création: " . $e->getMessage();
+    render('article_new', ['title' => 'Créer un article', 'errors' => $errors, 'old' => $_POST]);
+  }
+}
+if ($uri === '/article/new' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+  require_login();
+  render('article_new', ['title' => 'Créer un article', 'errors' => []]);
 }
 
 // =========================
@@ -387,7 +483,14 @@ if ($uri === '/login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if ($uri === '/logout') {
+    // Vide tout ce qui est lié à l'utilisateur
     unset($_SESSION['user']);
+    unset($_SESSION['cart']);
+    unset($_SESSION['cart_error']);
+
+    // Bonus sécurité : régénère l'id de session
+    session_regenerate_id(true);
+
     header('Location: ' . BASE_URL . '/');
     exit;
 }

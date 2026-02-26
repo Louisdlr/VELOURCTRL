@@ -21,7 +21,7 @@
 
         <?php if ($img): ?>
             <img 
-                src="<?= htmlspecialchars($img) ?>" 
+                src="<?= BASE_URL ?>/uploads/articles/<?= htmlspecialchars($img) ?>"
                 alt=""
                 style="max-width:280px;z-index:2;">
         <?php else: ?>
@@ -30,13 +30,6 @@
 
     </div>
 
-<<<<<<< Updated upstream
-<?php if ($canEdit): ?>
-  <form method="post" action="<?= BASE_URL ?>/edit/open/<?= (int)$article['id'] ?>">
-    <button type="submit">Modifier l’article</button>
-  </form>
-<?php endif; ?>
-=======
     <!-- RIGHT INFO -->
     <div class="modal-info">
 
@@ -110,4 +103,3 @@
     </div>
 
 </div>
->>>>>>> Stashed changes
