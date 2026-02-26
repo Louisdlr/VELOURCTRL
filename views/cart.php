@@ -26,7 +26,7 @@
                 <div class="cart-thumb">
                     <?php if (!empty($it['image_url'])): ?>
                         <img 
-                            src="<?= BASE_URL ?>/uploads/articles/<?= htmlspecialchars($it['image_url']) ?>"
+                            src="<?= BASE_URL ?>/assets/uploads/articles/<?= htmlspecialchars($it['image_url']) ?>"
                             alt=""
                             style="width:100%;height:100%;object-fit:cover;">
                     <?php endif; ?>

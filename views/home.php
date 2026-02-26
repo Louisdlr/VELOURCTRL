@@ -58,7 +58,7 @@
 
             <?php if (!empty($a['image_url'])): ?>
                 <img 
-                    src="<?= BASE_URL ?>/uploads/articles/<?= htmlspecialchars($a['image_url']) ?>" 
+                    src="<?= BASE_URL ?>/assets/uploads/articles/<?= htmlspecialchars($a['image_url']) ?>" 
                     alt="<?= htmlspecialchars($a['name']) ?>"
                     class="product-img">
             <?php else: ?>

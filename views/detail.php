@@ -20,12 +20,12 @@
         <div class="modal-halo"></div>
 
         <?php if ($img): ?>
-            <img 
-                src="<?= BASE_URL ?>/uploads/articles/<?= htmlspecialchars($img) ?>"
-                alt=""
-                style="max-width:280px;z-index:2;">
+          <img 
+            src="<?= BASE_URL ?>/assets/uploads/articles/<?= htmlspecialchars($img) ?>"
+             alt="<?= htmlspecialchars($article['name']) ?>"
+            class="detail-img">
         <?php else: ?>
-            <div class="cart-thumb"></div>
+          <div class="cart-thumb"></div>
         <?php endif; ?>
 
     </div>

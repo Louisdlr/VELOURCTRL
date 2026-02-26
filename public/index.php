@@ -770,6 +770,7 @@ if ($uri === '/admin/users') {
   render('admin/users', ['title'=>'Admin Users', 'users'=>$users]);
 }
 
-// 404
+// Si aucune route ne correspond
 http_response_code(404);
-render('home', ['title' => '404 - Page introuvable']);
+render('404', ['title' => '404']);
+exit;
